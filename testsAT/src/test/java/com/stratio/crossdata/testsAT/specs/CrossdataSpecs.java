@@ -245,8 +245,20 @@ public class CrossdataSpecs extends BaseSpec {
         }catch(Exception e){
             commonspec.getExceptions().add(e);
         }
-       // org.hamcrest.MatcherAssert.assertThat("The Cassandra keyspace does not contains the table", res,equalTo
-        // (true));
+       org.hamcrest.MatcherAssert.assertThat("The Cassandra keyspace does not contains the table", res,equalTo(true));
+    }
+
+    @Then(value= "The table '(.*?)' does not exists in cassandra keyspace '(.*?)'")
+    public void notExistsCassandraTable(String tableName,String keyspace){
+        commonspec.getLogger().info("Connecting to Cassandra");
+        commonspec.getCassandraClient().connect();
+        boolean res = commonspec.getCassandraClient().existsTable(keyspace, tableName, false);
+        try {
+            commonspec.getCassandraClient().disconnect();
+        }catch(Exception e){
+            commonspec.getExceptions().add(e);
+        }
+        org.hamcrest.MatcherAssert.assertThat("The Cassandra keyspace contains the table", res,equalTo(false));
     }
 
     @Given(value = "^I create a mongoDB database '(.*?)'$")
@@ -304,6 +316,27 @@ public class CrossdataSpecs extends BaseSpec {
                             database,
                     commonspec
                             .getMongoDBClient().exitsCollections(collection),equalTo(true));
+            commonspec.getMongoDBClient().disconnect();
+        } catch (DBException e) {
+            commonspec.getExceptions().add(e);
+        }
+    }
+
+    @Then(value= "The collection '(.*?)' does not exists in mongo database '(.*?)'")
+    public void notExistsMongoCollection(String collection,String database){
+        commonspec.getExceptions().clear();
+        commonspec.getLogger().info("Connecting to Mongo");
+        try {
+            commonspec.getMongoDBClient().connect();
+            commonspec.getMongoDBClient().exitsMongoDbDataBase(database);
+            org.hamcrest.MatcherAssert.assertThat("The Mongo database does not exists", commonspec
+                    .getMongoDBClient().exitsMongoDbDataBase(database), equalTo(true));
+            commonspec.getMongoDBClient().connectToMongoDBDataBase(database);
+            org.hamcrest.MatcherAssert.assertThat("The Mongo collection "+ collection +"exists in the "
+                            + "database " +
+                            database,
+                    commonspec
+                            .getMongoDBClient().exitsCollections(collection),equalTo(false));
             commonspec.getMongoDBClient().disconnect();
         } catch (DBException e) {
             commonspec.getExceptions().add(e);
